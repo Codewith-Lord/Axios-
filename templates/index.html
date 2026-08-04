@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="hero">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Axios" class="hero-logo">
+    <h1>AXIOS</h1>
+    <p class="tagline">Finding Talent. Building Futures.</p>
+    <p class="hero-sub">AI-assisted resume screening — parse, score, and rank candidates automatically.</p>
+    <div class="hero-actions">
+        <a href="{{ url_for('jobs') }}" class="btn btn-primary">Browse Open Roles</a>
+        {% if not current_user %}
+        <a href="{{ url_for('login') }}" class="btn btn-outline">Admin Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="info-grid">
+    <div class="card">
+        <div class="card-icon">◆</div>
+        <h3>Semantic Matching</h3>
+        <p>Goes beyond keyword search — compares full resume context against each role using TF-IDF and cosine similarity.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">◆</div>
+        <h3>Automatic Ranking</h3>
+        <p>Every applicant is scored and ranked in real time on the dashboard, so the best-fit candidates always rise to the top.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon">◆</div>
+        <h3>Workflow Automation</h3>
+        <p>Status changes trigger candidate notifications automatically — shortlisting, interview scheduling, and rejections included.</p>
+    </div>
+</div>
+{% endblock %}

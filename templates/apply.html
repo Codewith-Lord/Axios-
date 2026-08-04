@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Apply — {{ job.title }}{% endblock %}
+{% block content %}
+
+<h2>Apply for: {{ job.title }}</h2>
+{% if job.location %}<p class="job-location">📍 {{ job.location }}</p>{% endif %}
+<p>{{ job.description }}</p>
+<p><strong>Required skills:</strong> {{ job.required_skills }}</p>
+
+<form method="POST" enctype="multipart/form-data" class="form-card">
+    <label>Full Name</label>
+    <input type="text" name="name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Resume (PDF or DOCX)</label>
+    <input type="file" name="resume" accept=".pdf,.docx" required>
+
+    <button type="submit" class="btn btn-primary">Submit Application</button>
+</form>
+
+<a href="{{ url_for('jobs') }}">&larr; Back to jobs</a>
+{% endblock %}

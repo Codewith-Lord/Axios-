@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Shortlist — {{ job.title }}{% endblock %}
+{% block content %}
+
+<h2>Interview Shortlist: {{ job.title }}</h2>
+
+<form method="GET" class="filter-bar">
+    <label>Minimum match score:</label>
+    <input type="number" name="threshold" value="{{ threshold }}" min="0" max="100" step="5">
+    <button type="submit" class="btn btn-secondary">Update Threshold</button>
+</form>
+
+<p>{{ candidates|length }} candidate(s) at or above {{ threshold }}% match.</p>
+
+<table class="candidate-table">
+    <thead>
+        <tr>
+            <th>Rank</th><th>Name</th><th>Email</th><th>Skills</th>
+            <th>Experience (yrs)</th><th>Match Score</th><th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in candidates %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.email }}</td>
+            <td>{{ c.skills }}</td>
+            <td>{{ c.experience_years }}</td>
+            <td>{{ c.match_score }}%</td>
+            <td><span class="badge badge-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">No candidates meet this threshold.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('candidates', job_id=job._id) }}">&larr; Back to all candidates</a>
+{% endblock %}

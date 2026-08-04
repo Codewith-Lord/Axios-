@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Edit Job{% endblock %}
+{% block content %}
+
+<h2>Edit Job</h2>
+<form method="POST" class="form-card">
+    <label>Job Title</label>
+    <input type="text" name="title" value="{{ job.title }}" required>
+
+    <label>Location</label>
+    <input type="text" name="location" value="{{ job.location }}" placeholder="e.g. Pune, India / Remote">
+
+    <label>Description</label>
+    <textarea name="description" rows="3">{{ job.description }}</textarea>
+
+    <label>Required Skills (comma separated)</label>
+    <input type="text" name="required_skills" value="{{ job.required_skills }}">
+
+    <label>Minimum Experience (years)</label>
+    <input type="number" step="0.5" name="min_experience" value="{{ job.min_experience }}">
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+
+<a href="{{ url_for('jobs') }}">&larr; Back to jobs</a>
+{% endblock %}

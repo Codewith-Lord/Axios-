@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<h2>Dashboard & Analytics</h2>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_jobs }}</div>
+        <div class="stat-label">Total Jobs Posted</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_candidates }}</div>
+        <div class="stat-label">Total Applications</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.avg_score }}%</div>
+        <div class="stat-label">Average Match Score</div>
+    </div>
+</div>
+
+<h3>Candidates by Status</h3>
+<div class="status-breakdown">
+    {% for status, count in stats.status_counts.items() %}
+    <div class="status-pill badge-{{ status|lower|replace(' ', '-') }}">{{ status }}: {{ count }}</div>
+    {% else %}
+    <p>No applications yet.</p>
+    {% endfor %}
+</div>
+
+<h3>Top Jobs by Applicants</h3>
+<table class="candidate-table">
+    <thead>
+        <tr><th>Job Title</th><th>Applicants</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+        {% for job in stats.jobs_by_applicants %}
+        <tr>
+            <td>{{ job.title }}</td>
+            <td>{{ job.applicant_count }}</td>
+            <td><a href="{{ url_for('candidates', job_id=job.id) }}" class="btn btn-secondary">View</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">No jobs posted yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('jobs') }}">&larr; Back to jobs</a>
+{% endblock %}

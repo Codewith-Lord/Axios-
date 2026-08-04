@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Candidates — {{ job.title }}{% endblock %}
+{% block content %}
+
+<h2>Candidates for: {{ job.title }}</h2>
+<p>Ranked automatically by match score (skills + experience against job requirements).</p>
+
+<form method="GET" class="filter-bar">
+    <input type="text" name="keyword" placeholder="Search name or skill..." value="{{ keyword }}">
+    <input type="number" name="min_score" placeholder="Min score %" value="{{ min_score }}" min="0" max="100">
+    <select name="status">
+        <option value="">All statuses</option>
+        <option value="Applied" {% if status=="Applied" %}selected{% endif %}>Applied</option>
+        <option value="Shortlisted" {% if status=="Shortlisted" %}selected{% endif %}>Shortlisted</option>
+        <option value="Interview Scheduled" {% if status=="Interview Scheduled" %}selected{% endif %}>Interview Scheduled</option>
+        <option value="Rejected" {% if status=="Rejected" %}selected{% endif %}>Rejected</option>
+    </select>
+    <button type="submit" class="btn btn-secondary">Search</button>
+    <a href="{{ url_for('candidates', job_id=job._id) }}" class="btn btn-secondary">Clear</a>
+    <a href="{{ url_for('shortlist', job_id=job._id) }}" class="btn btn-primary">Generate Interview Shortlist</a>
+</form>
+
+<table class="candidate-table">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Skills</th>
+            <th>Experience (yrs)</th>
+            <th>Match Score</th>
+            <th>Status</th>
+            <th>Update Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in candidates %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.email }}</td>
+            <td>{{ c.skills }}</td>
+            <td>{{ c.experience_years }}</td>
+            <td>
+                <div class="score-bar-bg">
+                    <div class="score-bar" style="width: {{ c.match_score }}%"></div>
+                </div>
+                {{ c.match_score }}%
+            </td>
+            <td>
+                <span class="badge badge-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span>
+                {% if c.interview_datetime %}<div class="interview-time">{{ c.interview_datetime }}</div>{% endif %}
+            </td>
+            <td>
+                <form method="POST" action="{{ url_for('update_status', candidate_id=c._id) }}" class="status-form">
+                    <select name="status">
+                        <option value="Applied" {% if c.status=="Applied" %}selected{% endif %}>Applied</option>
+                        <option value="Shortlisted" {% if c.status=="Shortlisted" %}selected{% endif %}>Shortlisted</option>
+                        <option value="Interview Scheduled" {% if c.status=="Interview Scheduled" %}selected{% endif %}>Interview Scheduled</option>
+                        <option value="Rejected" {% if c.status=="Rejected" %}selected{% endif %}>Rejected</option>
+                    </select>
+                    <input type="datetime-local" name="interview_datetime" class="interview-input">
+                    <button type="submit" class="btn btn-secondary btn-sm">Update</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">No candidates have applied yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('jobs') }}">&larr; Back to jobs</a>
+{% endblock %}

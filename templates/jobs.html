@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Job Postings{% endblock %}
+{% block content %}
+
+{% if current_user %}
+<h2>Post a New Job</h2>
+<form method="POST" class="form-card">
+    <label>Job Title</label>
+    <input type="text" name="title" required>
+
+    <label>Location</label>
+    <input type="text" name="location" placeholder="e.g. Pune, India / Remote">
+
+    <label>Description</label>
+    <textarea name="description" rows="3"></textarea>
+
+    <label>Required Skills (comma separated)</label>
+    <input type="text" name="required_skills" placeholder="Python, SQL, Django">
+
+    <label>Minimum Experience (years)</label>
+    <input type="number" step="0.5" name="min_experience" value="0">
+
+    <button type="submit" class="btn btn-primary">Post Job</button>
+</form>
+{% else %}
+<div class="flash flash-info">Only Axios admins can post jobs. <a href="{{ url_for('login') }}">Log in</a> to post one.</div>
+{% endif %}
+
+<h2>Current Openings</h2>
+<div class="job-list">
+    {% for job in jobs %}
+    <div class="card job-card">
+        <h3>{{ job.title }}</h3>
+        {% if job.location %}<p class="job-location">📍 {{ job.location }}</p>{% endif %}
+        <p>{{ job.description }}</p>
+        <p><strong>Skills:</strong> {{ job.required_skills }}</p>
+        <p><strong>Min. Experience:</strong> {{ job.min_experience }} years</p>
+        <div class="job-actions">
+            <a href="{{ url_for('apply', job_id=job._id) }}" class="btn btn-secondary">Apply</a>
+            {% if current_user %}
+            <a href="{{ url_for('candidates', job_id=job._id) }}" class="btn btn-secondary">View Candidates</a>
+            <a href="{{ url_for('edit_job', job_id=job._id) }}" class="btn btn-secondary">Edit</a>
+            <form method="POST" action="{{ url_for('delete_job', job_id=job._id) }}" style="display:inline">
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <p>No jobs posted yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
