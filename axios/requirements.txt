@@ -1,5 +1,6 @@
 Flask
 pypdf
 python-docx
-pymongo
+pymongo[srv]
 scikit-learn
+gunicorn

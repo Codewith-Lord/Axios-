@@ -34,7 +34,7 @@ body {
     height: 36px;
     width: 36px;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: 50%;
     box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 .brand-text {
@@ -76,7 +76,7 @@ body {
     width: 90px;
     object-fit: cover;
     margin-bottom: 10px;
-    border-radius: 12px;
+    border-radius: 50%;
     box-shadow: 0 4px 16px rgba(15,27,46,0.15);
 }
 .hero h1 {

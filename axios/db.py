@@ -1,5 +1,9 @@
 """
-Database layer — MongoDB (via pymongo), connecting to a local instance.
+Database layer — MongoDB (via pymongo).
+
+Connects using the MONGO_URI environment variable if set (e.g. a
+MongoDB Atlas connection string on Render), otherwise falls back to
+a local MongoDB instance for development.
 
 Collections:
     users       - Admin accounts
@@ -10,12 +14,13 @@ All document IDs are MongoDB ObjectIds. Routes/templates work with
 their string representation (str(ObjectId)) so URLs stay clean.
 """
 
+import os
 from pymongo import MongoClient, DESCENDING
 from bson.objectid import ObjectId
 from datetime import datetime
 
-MONGO_URI = "mongodb://localhost:27017"
-DB_NAME = "axios_db"
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+DB_NAME = os.environ.get("MONGO_DB_NAME", "axios_db")
 
 client = MongoClient(MONGO_URI)
 database = client[DB_NAME]
