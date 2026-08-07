@@ -12,11 +12,12 @@
 
 <p>{{ candidates|length }} candidate(s) at or above {{ threshold }}% match.</p>
 
+<div class="table-responsive">
 <table class="candidate-table">
     <thead>
         <tr>
             <th>Rank</th><th>Name</th><th>Email</th><th>Skills</th>
-            <th>Experience (yrs)</th><th>Match Score</th><th>Status</th>
+            <th>Experience (yrs)</th><th>Match Score</th><th>ATS Score</th><th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -28,13 +29,15 @@
             <td>{{ c.skills }}</td>
             <td>{{ c.experience_years }}</td>
             <td>{{ c.match_score }}%</td>
+            <td>{{ c.ats_score if c.ats_score is not none else 'N/A' }}{{ '%' if c.ats_score is not none else '' }}</td>
             <td><span class="badge badge-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span></td>
         </tr>
         {% else %}
-        <tr><td colspan="7">No candidates meet this threshold.</td></tr>
+        <tr><td colspan="8">No candidates meet this threshold.</td></tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <a href="{{ url_for('candidates', job_id=job._id) }}">&larr; Back to all candidates</a>
 {% endblock %}

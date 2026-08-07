@@ -29,6 +29,7 @@
 </div>
 
 <h3>Top Jobs by Applicants</h3>
+<div class="table-responsive">
 <table class="candidate-table">
     <thead>
         <tr><th>Job Title</th><th>Applicants</th><th>Action</th></tr>
@@ -45,6 +46,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <a href="{{ url_for('jobs') }}">&larr; Back to jobs</a>
 {% endblock %}

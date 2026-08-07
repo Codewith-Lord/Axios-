@@ -27,6 +27,13 @@
 {% endif %}
 
 <h2>Current Openings</h2>
+
+<form method="GET" class="filter-bar">
+    <input type="text" name="keyword" placeholder="Search by role, skill, or location..." value="{{ keyword }}">
+    <button type="submit" class="btn btn-secondary">Search</button>
+    {% if keyword %}<a href="{{ url_for('jobs') }}" class="btn btn-secondary">Clear</a>{% endif %}
+</form>
+
 <div class="job-list">
     {% for job in jobs %}
     <div class="card job-card">
@@ -37,7 +44,7 @@
         <p><strong>Min. Experience:</strong> {{ job.min_experience }} years</p>
         <div class="job-actions">
             <a href="{{ url_for('apply', job_id=job._id) }}" class="btn btn-secondary">Apply</a>
-            {% if current_user %}
+            {% if current_user and job.created_by == current_user._id|string %}
             <a href="{{ url_for('candidates', job_id=job._id) }}" class="btn btn-secondary">View Candidates</a>
             <a href="{{ url_for('edit_job', job_id=job._id) }}" class="btn btn-secondary">Edit</a>
             <form method="POST" action="{{ url_for('delete_job', job_id=job._id) }}" style="display:inline">
@@ -47,7 +54,13 @@
         </div>
     </div>
     {% else %}
-    <p>No jobs posted yet.</p>
+    <div class="card">
+        {% if keyword %}
+        <p>No jobs available matching "<strong>{{ keyword }}</strong>".</p>
+        {% else %}
+        <p>No jobs posted yet.</p>
+        {% endif %}
+    </div>
     {% endfor %}
 </div>
 {% endblock %}

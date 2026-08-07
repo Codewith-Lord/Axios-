@@ -42,3 +42,10 @@ def login_required(view_func):
             return redirect(url_for("login"))
         return view_func(*args, **kwargs)
     return wrapped
+
+
+def owns_job(job_doc):
+    """True if the currently logged-in admin created this job."""
+    if "user_id" not in session or job_doc is None:
+        return False
+    return str(job_doc.get("created_by")) == str(session["user_id"])

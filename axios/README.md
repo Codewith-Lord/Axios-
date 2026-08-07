@@ -5,6 +5,29 @@ parsing (PDF/DOCX), semantic + structured candidate scoring, real-time
 ranking dashboard, and automated status-change notifications. Backed
 by local MongoDB.
 
+## Latest changes
+
+- **Mobile-friendly design** — responsive layout throughout: collapsible
+  hamburger nav on small screens, stacked cards/stats on phones,
+  horizontally-scrollable candidate/shortlist/dashboard tables (so
+  wide data tables don't break the page on a phone), full-width forms
+  and buttons on mobile.
+- **ATS Score** — every application now gets two separate scores:
+  *Match Score* (fit for this specific job) and *ATS Score* (how
+  well-structured/parseable the resume itself is — contact info,
+  skills/experience/education sections, adequate content length).
+  See `ats_score.py`.
+- **Login fix** — emails are now normalized (trimmed + lowercased)
+  on both register and login, fixing false "incorrect username or
+  password" errors caused by casing/whitespace mismatches.
+- **Job search on the public Jobs page** — search by role, skill, or
+  location keyword; shows a clear "No jobs available" message when
+  nothing matches.
+- **Job ownership isolation** — each admin can only view/edit/delete
+  candidates and jobs *they personally posted*. The dashboard and
+  analytics are scoped to each admin's own jobs only, not global
+  data across all admins.
+
 ## What changed in this version
 
 - **Database:** SQLite → local **MongoDB** (`pymongo`), DB name `axios_db`

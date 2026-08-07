@@ -7,6 +7,7 @@ import auth
 import email_utils
 from parser import parse_resume
 from matcher import calculate_match_score
+from ats_score import calculate_ats_score
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
@@ -42,7 +43,7 @@ def home():
 def register():
     if request.method == "POST":
         name = request.form.get("name")
-        email = request.form.get("email")
+        email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password")
 
         if not name or not email or not password:
@@ -66,7 +67,7 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email")
+        email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password")
 
         user = db.get_user_by_email(email)
@@ -88,12 +89,13 @@ def logout():
     return redirect(url_for("home"))
 
 
-# ---------- Dashboard & Analytics ----------
+# ---------- Dashboard & Analytics (scoped to the logged-in admin's own jobs) ----------
 @app.route("/dashboard")
 @auth.login_required
 def dashboard():
-    stats = db.get_dashboard_stats()
-    jobs = db.get_all_jobs()
+    admin_id = str(auth.current_user()["_id"])
+    stats = db.get_dashboard_stats(created_by=admin_id)
+    jobs = db.get_jobs_by_owner(admin_id)
     return render_template("dashboard.html", stats=stats, jobs=jobs)
 
 
@@ -113,13 +115,14 @@ def jobs():
 
         db.create_job(
             title, description, required_skills, float(min_experience or 0),
-            location=location, created_by=auth.current_user()["_id"],
+            location=location, created_by=str(auth.current_user()["_id"]),
         )
         flash("Job posted successfully!", "success")
         return redirect(url_for("jobs"))
 
-    all_jobs = db.get_all_jobs()
-    return render_template("jobs.html", jobs=all_jobs)
+    keyword = request.args.get("keyword", "").strip()
+    all_jobs = db.search_jobs(keyword) if keyword else db.get_all_jobs()
+    return render_template("jobs.html", jobs=all_jobs, keyword=keyword)
 
 
 @app.route("/jobs/<job_id>/edit", methods=["GET", "POST"])
@@ -128,6 +131,10 @@ def edit_job(job_id):
     job = db.get_job(job_id)
     if job is None:
         flash("Job not found.", "danger")
+        return redirect(url_for("jobs"))
+
+    if not auth.owns_job(job):
+        flash("You can only edit jobs you posted yourself.", "danger")
         return redirect(url_for("jobs"))
 
     if request.method == "POST":
@@ -148,6 +155,15 @@ def edit_job(job_id):
 @app.route("/jobs/<job_id>/delete", methods=["POST"])
 @auth.login_required
 def delete_job(job_id):
+    job = db.get_job(job_id)
+    if job is None:
+        flash("Job not found.", "danger")
+        return redirect(url_for("jobs"))
+
+    if not auth.owns_job(job):
+        flash("You can only delete jobs you posted yourself.", "danger")
+        return redirect(url_for("jobs"))
+
     db.delete_job(job_id)
     flash("Job deleted.", "info")
     return redirect(url_for("jobs"))
@@ -187,6 +203,7 @@ def apply(job_id):
             resume_text=parsed_data.get("raw_text", ""),
             job_description=job.get("description", ""),
         )
+        ats_score, ats_tips = calculate_ats_score(parsed_data)
 
         db.create_candidate(
             job_id=job_id,
@@ -197,22 +214,27 @@ def apply(job_id):
             experience_years=parsed_data.get("experience_years", 0),
             resume_path=filename,
             match_score=score,
+            ats_score=ats_score,
             resume_text=parsed_data.get("raw_text", ""),
         )
 
-        flash(f"Application submitted! Match score: {score}%", "success")
+        flash(f"Application submitted! Match score: {score}% · ATS score: {ats_score}%", "success")
         return redirect(url_for("apply", job_id=job_id))
 
     return render_template("apply.html", job=job)
 
 
-# ---------- Screening Dashboard (search + filter) ----------
+# ---------- Screening Dashboard (search + filter, owner-only) ----------
 @app.route("/jobs/<job_id>/candidates")
 @auth.login_required
 def candidates(job_id):
     job = db.get_job(job_id)
     if job is None:
         flash("Job not found.", "danger")
+        return redirect(url_for("jobs"))
+
+    if not auth.owns_job(job):
+        flash("You can only view candidates for jobs you posted yourself.", "danger")
         return redirect(url_for("jobs"))
 
     keyword = request.args.get("keyword", "").strip()
@@ -239,6 +261,10 @@ def shortlist(job_id):
         flash("Job not found.", "danger")
         return redirect(url_for("jobs"))
 
+    if not auth.owns_job(job):
+        flash("You can only view the shortlist for jobs you posted yourself.", "danger")
+        return redirect(url_for("jobs"))
+
     threshold = request.args.get("threshold", "70")
     threshold = float(threshold) if threshold else 70
     shortlisted = db.get_shortlist(job_id, threshold)
@@ -253,6 +279,11 @@ def update_status(candidate_id):
         flash("Candidate not found.", "danger")
         return redirect(url_for("jobs"))
 
+    job = db.get_job(candidate["job_id"])
+    if not auth.owns_job(job):
+        flash("You can only manage candidates for jobs you posted yourself.", "danger")
+        return redirect(url_for("jobs"))
+
     new_status = request.form.get("status")
     interview_datetime = request.form.get("interview_datetime", "").strip()
 
@@ -264,7 +295,6 @@ def update_status(candidate_id):
     else:
         db.update_candidate_status(candidate_id, new_status)
 
-    job = db.get_job(candidate["job_id"])
     subject = f"Application Update: {job['title']}"
     body = email_utils.status_update_body(
         candidate["name"], job["title"], new_status,
@@ -281,9 +311,14 @@ def update_status(candidate_id):
     return redirect(url_for("candidates", job_id=candidate["job_id"]))
 
 
-# ---------- Simple JSON API (real-time dashboard polling) ----------
+# ---------- Simple JSON API (real-time dashboard polling, owner-only) ----------
 @app.route("/api/jobs/<job_id>/candidates")
+@auth.login_required
 def api_candidates(job_id):
+    job = db.get_job(job_id)
+    if job is None or not auth.owns_job(job):
+        return jsonify({"error": "not found or not authorized"}), 404
+
     ranked = db.get_candidates_for_job(job_id)
     for c in ranked:
         c["_id"] = str(c["_id"])

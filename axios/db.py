@@ -103,6 +103,27 @@ def get_all_jobs():
     return list(jobs.find().sort("created_at", DESCENDING))
 
 
+def get_jobs_by_owner(created_by):
+    return list(jobs.find({"created_by": created_by}).sort("created_at", DESCENDING))
+
+
+def search_jobs(keyword):
+    """Keyword search across title, location, description, and required skills
+    for the public Jobs browse page. Returns [] if nothing matches."""
+    like = keyword.strip()
+    if not like:
+        return get_all_jobs()
+    query = {
+        "$or": [
+            {"title": {"$regex": like, "$options": "i"}},
+            {"location": {"$regex": like, "$options": "i"}},
+            {"description": {"$regex": like, "$options": "i"}},
+            {"required_skills": {"$regex": like, "$options": "i"}},
+        ]
+    }
+    return list(jobs.find(query).sort("created_at", DESCENDING))
+
+
 def get_job(job_id):
     oid = _oid(job_id)
     if not oid:
@@ -125,7 +146,7 @@ def job_skills_list(job_doc):
 
 # ---------- Candidate queries ----------
 def create_candidate(job_id, name, email, phone, skills, experience_years,
-                      resume_path, match_score, resume_text=""):
+                      resume_path, match_score, resume_text="", ats_score=0):
     result = candidates.insert_one({
         "job_id": job_id,
         "name": name,
@@ -136,6 +157,7 @@ def create_candidate(job_id, name, email, phone, skills, experience_years,
         "resume_path": resume_path,
         "resume_text": resume_text,
         "match_score": match_score,
+        "ats_score": ats_score,
         "status": "Applied",
         "notified": False,
         "interview_datetime": None,
@@ -206,19 +228,23 @@ def get_shortlist(job_id, threshold=70):
 
 
 # ---------- Analytics ----------
-def get_dashboard_stats():
-    total_jobs = jobs.count_documents({})
-    total_candidates = candidates.count_documents({})
+def get_dashboard_stats(created_by=None):
+    job_filter = {"created_by": created_by} if created_by else {}
+    own_job_ids = [str(j["_id"]) for j in jobs.find(job_filter, {"_id": 1})]
+    candidate_filter = {"job_id": {"$in": own_job_ids}} if created_by else {}
 
-    avg_pipeline = [{"$group": {"_id": None, "avg": {"$avg": "$match_score"}}}]
+    total_jobs = jobs.count_documents(job_filter)
+    total_candidates = candidates.count_documents(candidate_filter)
+
+    avg_pipeline = [{"$match": candidate_filter}, {"$group": {"_id": None, "avg": {"$avg": "$match_score"}}}]
     avg_result = list(candidates.aggregate(avg_pipeline))
     avg_score = round(avg_result[0]["avg"], 2) if avg_result and avg_result[0]["avg"] is not None else 0
 
-    status_pipeline = [{"$group": {"_id": "$status", "count": {"$sum": 1}}}]
+    status_pipeline = [{"$match": candidate_filter}, {"$group": {"_id": "$status", "count": {"$sum": 1}}}]
     status_counts = {row["_id"]: row["count"] for row in candidates.aggregate(status_pipeline)}
 
     jobs_by_applicants = []
-    for job in jobs.find().sort("created_at", DESCENDING):
+    for job in jobs.find(job_filter).sort("created_at", DESCENDING):
         job_id_str = str(job["_id"])
         count = candidates.count_documents({"job_id": job_id_str})
         jobs_by_applicants.append({"id": job_id_str, "title": job["title"], "applicant_count": count})

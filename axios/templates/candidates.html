@@ -20,6 +20,7 @@
     <a href="{{ url_for('shortlist', job_id=job._id) }}" class="btn btn-primary">Generate Interview Shortlist</a>
 </form>
 
+<div class="table-responsive">
 <table class="candidate-table">
     <thead>
         <tr>
@@ -29,6 +30,7 @@
             <th>Skills</th>
             <th>Experience (yrs)</th>
             <th>Match Score</th>
+            <th>ATS Score</th>
             <th>Status</th>
             <th>Update Status</th>
         </tr>
@@ -47,6 +49,7 @@
                 </div>
                 {{ c.match_score }}%
             </td>
+            <td>{{ c.ats_score if c.ats_score is not none else 'N/A' }}{{ '%' if c.ats_score is not none else '' }}</td>
             <td>
                 <span class="badge badge-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span>
                 {% if c.interview_datetime %}<div class="interview-time">{{ c.interview_datetime }}</div>{% endif %}
@@ -65,10 +68,11 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="8">No candidates have applied yet.</td></tr>
+        <tr><td colspan="9">No candidates have applied yet.</td></tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <a href="{{ url_for('jobs') }}">&larr; Back to jobs</a>
 {% endblock %}
